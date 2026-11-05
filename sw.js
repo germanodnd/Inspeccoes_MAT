@@ -1,7 +1,7 @@
 // Só é usado quando a aplicação está alojada num site (https): guarda-a no telemóvel
 // para abrir também sem rede. Aberta como ficheiro local, não é necessário.
-const CACHE = "inspecao-dla-v3";
-const FICHEIROS = ["Inspecao_DLA.html", "Visor_3D_DLA.html", "manifest.webmanifest"];
+const CACHE = "postes-mat-v4";
+const FICHEIROS = ["index.html", "Inspecao_DLA.html", "Visor_3D_DLA.html", "manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FICHEIROS)).then(() => self.skipWaiting()));

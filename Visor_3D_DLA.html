@@ -135,6 +135,7 @@ h2 {
 .opcoes { display: flex; flex-direction: column; gap: 6px; font-size: .88rem; }
 .opcoes label { display: flex; gap: 8px; align-items: center; cursor: pointer; }
 .nota { font-size: .8rem; color: var(--muted); line-height: 1.45; border-left: 3px solid var(--accent); padding-left: 10px; }
+a.lig + a.lig { margin-left: 0; }
 a.lig { margin-left: auto; font-family: var(--font-display); font-weight: 600; font-size: .85rem; color: var(--accent); text-decoration: none; border: 1px solid var(--accent); border-radius: 4px; padding: 3px 8px; }
 #maximizar { display: none; }
 @media (max-width: 760px) {
@@ -160,6 +161,7 @@ a.lig { margin-left: auto; font-family: var(--font-display); font-weight: 600; f
   <label class="escolha-poste">Poste <select id="sel-poste" aria-label="Tipo de poste"></select></label>
   <span class="sub" id="sub">Linhas a 400 kV</span>
   <span class="tag">Esquemático</span>
+  <a class="lig" id="lig-inicio" href="index.html" hidden>⌂ Início</a>
   <a class="lig" id="lig-insp" href="Inspecao_DLA.html" hidden>Inspeção →</a>
 </header>
 <main>
@@ -2579,7 +2581,7 @@ var POSTES_DLA = (function () {
 
 </script>
 
-<script>document.getElementById("lig-insp").hidden = false;
+<script>document.getElementById("lig-insp").hidden = false; document.getElementById("lig-inicio").hidden = false;
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(function () {});</script>
 </body>
 </html>
