@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#d9711c">
-<title>Inspeção postes DLA</title>
+<title>Inspeção postes DLA e DLR</title>
 <link rel="manifest" href="manifest.webmanifest">
 <style>
 /* Versão independente (sem conta, sem internet): tudo fica guardado neste telemóvel */
@@ -117,7 +117,7 @@ details.sec > summary:focus-visible { outline: 2px solid var(--accent); outline-
 </head>
 <body>
 <div class="barra">
-  <h1>Inspeção DLA</h1>
+  <h1>Inspeção DLA · DLR</h1>
   <a href="Visor_3D_DLA.html" style="font-weight:600;font-size:.85rem;color:var(--accent);text-decoration:none;border:1px solid var(--accent);border-radius:4px;padding:3px 8px">Ver postes 3D</a>
   <span class="sub" id="barra-sub">400 kV · funciona sem rede</span>
   <span class="esp"></span>
@@ -1251,7 +1251,7 @@ details.sec > summary:focus-visible { outline: 2px solid var(--accent); outline-
 
 </script>
 <script>
-// Postes tipo DLA (REN, linhas a 400 kV): geometria medida nos PDFs das pastas DLA1..DLA10.
+// Postes tipo DLA e DLR (REN, linhas a 400 kV): geometria medida nos PDFs das pastas DLA/DLA1..10 e DLR.
 // Partilhado pelo visualizador 3D e pela aplicação de inspeção (é metido em linha ao construir).
 //
 // O corpo é tronco-piramidal RETANGULAR: inclinação por lado 0,1146 na vista frontal
@@ -1286,6 +1286,21 @@ var POSTES_DLA = (function () {
     f6: { nome: "Fuste 6", h: 6.670, esc: "1/25", folha: "Fustes/Fuste 6.pdf" },
     f7: { nome: "Fuste 7", h: 5.350, esc: "1/25", folha: "Fustes/Fuste 7.pdf" }
   };
+  // Família DLR (desenhos LD26113, pasta DLR): mesma cabeça, braços e inclinações dos DLA;
+  // alturas dos troços pelas cotas das folhas; uma só perna ("0") por poste.
+  var FUSTES_DLR = {
+    t1: { nome: "Fuste T1", h: 7.077, esc: "1/15", folha: "Fuste-T1/Desenho/LD26113F8.pdf" },
+    t2: { nome: "Fuste T2", h: 7.916, esc: "1/15", folha: "Fuste-T2/Desenho/LD26113F9.pdf" },
+    t3: { nome: "Fuste T3", h: 6.019, esc: "1/15", folha: "Fuste-T3/Desenho/LD26113F10.pdf" },
+    t4: { nome: "Fuste T4", h: 6.019, esc: "1/15", folha: "Fuste-T4/Desenho/LD26113F11.pdf" },
+    t5: { nome: "Fuste T5", h: 6.019, esc: "1/15", folha: "Fuste-T5/Desenho/LD26113F12.pdf" },
+    t5a: { nome: "Fuste T5A", h: 6.019, esc: "1/15", folha: "Fuste-T5A/Desenho/LD26113F26.pdf" },
+    t6: { nome: "Fuste T6", h: 6.019, esc: "1/15", folha: "Fuste-T6/Desenho/LD26113F20.pdf" },
+    t7: { nome: "Fuste T7", h: 6.019, esc: "1/15", folha: "Fuste-T7/Desenho/LD26113F21.pdf" }
+  };
+  var CAB_DLR = { c1: "Cabeça-T1/Desenho/LD26113F1.pdf", c2: "Cabeça-T2/Desenho/LD26113F2.pdf", c3: "Cabeça-T3/Desenho/LD26113F3.pdf", c4: "Cabeça-T4/Desenho/LD26113F4.pdf" };
+  var BR_DLR = { bcg: "Br Cabo Guarda/Desenho/LD26113F5.pdf", bsup: "Br Sup Médio/Desenho/LD26113F6.pdf", bmed: "Br Sup Médio/Desenho/LD26113F6.pdf", binf: "Br Inferior/Desenho/LD26113F7.pdf" };
+  var PERNA_DLR = { 1: 13, 2: 14, 3: 15, 4: 16, 5: 17, 6: 18, 7: 22, 8: 23, 9: 24, 10: 25 };
   // Composição (fustes de baixo para cima) e alturas das pernas [variante, altura em m]
   var DEF = [
     { id: "DLA1", fustes: ["f3", "f2", "f1"], pernas: [["-1", 2.007], ["0", 3.015], ["1", 4.013], ["2", 5.016], ["3", 6.019]] },
@@ -1297,36 +1312,50 @@ var POSTES_DLA = (function () {
     { id: "DLA7", fustes: ["f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-1", 2.348], ["0", 3.351], ["1", 4.354], ["2", 5.357], ["3", 6.360]] },
     { id: "DLA8", fustes: ["f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-2", 4.354], ["-1", 5.357], ["0", 6.361], ["1", 7.364], ["2", 8.367], ["3", 9.370]] },
     { id: "DLA9", fustes: ["f7", "f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-2", 2.006], ["-1", 3.010], ["0", 4.013], ["1", 5.016], ["2", 6.019], ["3", 7.022]] },
-    { id: "DLA10", fustes: ["f7", "f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-2", 5.016], ["-1", 6.040], ["0", 7.022], ["1", 8.026], ["2", 9.029], ["3", 10.032]] }
+    { id: "DLA10", fustes: ["f7", "f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-2", 5.016], ["-1", 6.040], ["0", 7.022], ["1", 8.026], ["2", 9.029], ["3", 10.032]] },
+    // DLR: alturas das pernas pelas cotas das folhas; DLR2 e DLR7 confirmadas pela tabela de bases (LD26113F19)
+    { id: "DLR1", fustes: ["t3", "t2", "t1"], pernas: [["0", 3.010]] },
+    { id: "DLR2", fustes: ["t3", "t2", "t1"], pernas: [["0", 6.019]] },
+    { id: "DLR3", fustes: ["t4", "t3", "t2", "t1"], pernas: [["0", 3.010]] },
+    { id: "DLR4", fustes: ["t4", "t3", "t2", "t1"], pernas: [["0", 6.019]] },
+    { id: "DLR5", fustes: ["t5", "t4", "t3", "t2", "t1"], pernas: [["0", 4.013]] },
+    { id: "DLR6", fustes: ["t5", "t4", "t3", "t2", "t1"], pernas: [["0", 7.022]] },
+    { id: "DLR7", fustes: ["t6", "t5a", "t4", "t3", "t2", "t1"], pernas: [["0", 4.013]] },
+    { id: "DLR8", fustes: ["t6", "t5a", "t4", "t3", "t2", "t1"], pernas: [["0", 7.022]] },
+    { id: "DLR9", fustes: ["t7", "t6", "t5a", "t4", "t3", "t2", "t1"], pernas: [["0", 4.013]] },
+    { id: "DLR10", fustes: ["t7", "t6", "t5a", "t4", "t3", "t2", "t1"], pernas: [["0", 7.022]] }
   ];
   var r3 = function (v) { return Math.round(v * 1000) / 1000; };
   var nomeVar = function (k) { return (k[0] === "-" ? "−" + k.slice(1) : "+" + k) + "m"; };
 
   function construir(d) {
+    var dlr = d.id.slice(0, 3) === "DLR", n = d.id.slice(3);
+    var TAB = dlr ? FUSTES_DLR : FUSTES;
     var ZT = d.pernas.filter(function (p) { return p[0] === "0"; })[0][1];
-    var corpo = d.fustes.reduce(function (s, f) { return s + FUSTES[f].h; }, 0);
+    var corpo = d.fustes.reduce(function (s, f) { return s + TAB[f].h; }, 0);
     var zc = ZT + corpo;                    // base da Cabeça 4
     var wx = function (z) { return r3(WC + 2 * SX * Math.max(0, zc - z)); };
     var wy = function (z) { return r3(WC + 2 * SY * Math.max(0, zc - z)); };
     var trocos = [], z = ZT;
     d.fustes.forEach(function (f) {
-      var F = FUSTES[f], z1 = r3(z + F.h);
+      var F = TAB[f], z1 = r3(z + F.h);
       trocos.push({ id: f, nome: F.nome, tipo: "fuste", z0: r3(z), z1: z1, wx0: wx(z), wx1: wx(z1), wy0: wy(z), wy1: wy(z1), esc: F.esc, folha: F.folha });
       z = z1;
     });
     CABECAS.forEach(function (c) {
-      trocos.push({ id: c.id, nome: c.nome, tipo: "cabeca", z0: r3(zc + c.a), z1: r3(zc + c.b), wx0: WC, wx1: WC, wy0: WC, wy1: WC, esc: c.esc, folha: "Cabeças/" + c.nome + ".pdf" });
+      trocos.push({ id: c.id, nome: c.nome, tipo: "cabeca", z0: r3(zc + c.a), z1: r3(zc + c.b), wx0: WC, wx1: WC, wy0: WC, wy1: WC, esc: c.esc, folha: dlr ? CAB_DLR[c.id] : "Cabeças/" + c.nome + ".pdf" });
     });
     var WTx = wx(ZT), WTy = wy(ZT);
     var variantes = d.pernas.map(function (p) {
-      return { id: p[0], nome: nomeVar(p[0]), h: p[1], wx: r3(WTx + 2 * SX * p[1]), wy: r3(WTy + 2 * SY * p[1]), esc: "—",
-        folha: "Pernas Desniveladas/" + d.id + " " + (p[0][0] === "-" ? p[0] : "+" + p[0]) + "m.pdf" };
+      return { id: p[0], nome: nomeVar(p[0]), h: p[1], wx: r3(WTx + 2 * SX * p[1]), wy: r3(WTy + 2 * SY * p[1]), esc: dlr ? "1/15" : "—",
+        folha: dlr ? "Pernas " + d.id + "/Desenho/LD26113F" + PERNA_DLR[n] + ".pdf"
+                   : "Pernas Desniveladas/" + d.id + " " + (p[0][0] === "-" ? p[0] : "+" + p[0]) + "m.pdf" };
     });
     var bracos = BRACOS.map(function (b) {
       var o = {}; for (var k in b) o[k] = b[k];
-      o.z = r3(zc + b.dz); o.w0 = WC; o.w1 = 0.13; return o;
+      o.z = r3(zc + b.dz); o.w0 = WC; o.w1 = 0.13; if (dlr) o.folha = BR_DLR[b.id]; return o;
     });
-    return { id: d.id, nome: "Poste " + d.id, ZT: ZT, WTx: WTx, WTy: WTy, H: r3(zc + 22.668), zc: r3(zc), FACE: WC / 2,
+    return { id: d.id, familia: dlr ? "DLR" : "DLA", pasta: dlr ? "DLR" : "DLA/" + d.id, nome: "Poste " + d.id, ZT: ZT, WTx: WTx, WTy: WTy, H: r3(zc + 22.668), zc: r3(zc), FACE: WC / 2,
       fustes: d.fustes.slice(), VARIANTES: variantes, TROCOS: trocos, BRACOS: bracos };
   }
   var lista = DEF.map(construir), mapa = {};
@@ -1357,8 +1386,8 @@ var POSTES_DLA = (function () {
     P.BRACOS.forEach((b) => TRAVESSAS.push(b.topo ? b.z - b.d0 : b.z, b.topo ? b.z : b.z + b.d0));
     const ITENS = [];
     PERNAS.forEach((p) => ITENS.push({ id: p.id, nome: p.nome, tipo: "perna", grupo: "g-pernas", ref: "Variante prevista no projeto" }));
-    P.TROCOS.slice().reverse().forEach((t) => ITENS.push({ id: t.id, nome: t.nome, tipo: "troco", grupo: "g-corpo", ref: fmt(t.z0, true) + " → " + fmt(t.z1, true) + " m · " + P.id + "/" + t.folha }));
-    P.BRACOS.forEach((b) => [1, 2].forEach((lado) => ITENS.push({ id: b.id + "-" + lado, nome: b.nome + " · lado " + lado, tipo: "braco", grupo: "g-bracos", ref: fmt(b.z, true) + " m · " + P.id + "/" + b.folha })));
+    P.TROCOS.slice().reverse().forEach((t) => ITENS.push({ id: t.id, nome: t.nome, tipo: "troco", grupo: "g-corpo", ref: fmt(t.z0, true) + " → " + fmt(t.z1, true) + " m · " + P.pasta + "/" + t.folha }));
+    P.BRACOS.forEach((b) => [1, 2].forEach((lado) => ITENS.push({ id: b.id + "-" + lado, nome: b.nome + " · lado " + lado, tipo: "braco", grupo: "g-bracos", ref: fmt(b.z, true) + " m · " + P.pasta + "/" + b.folha })));
     return (MODELOS[P.id] = { P, VAR, TRAVESSAS, ITENS, ITEM: Object.fromEntries(ITENS.map((i) => [i.id, i])) });
   }
   // dados do poste da inspeção aberta (mudam em usar())
@@ -1412,7 +1441,7 @@ var POSTES_DLA = (function () {
   function prepararForm() {
     $("n-data").value = hoje();
     let ult = "DLA1"; try { ult = localStorage.getItem("ultimo-tipo") || "DLA1"; } catch (e) {}
-    $("n-tipo").innerHTML = POSTES_DLA.lista.map((p) => '<option value="' + p.id + '">' + p.id + " · " + fmt(p.H) + " m</option>").join("");
+    $("n-tipo").innerHTML = ["DLA", "DLR"].map((fam) => '<optgroup label="' + fam + '">' + POSTES_DLA.lista.filter((p) => p.familia === fam).map((p) => '<option value="' + p.id + '">' + p.id + " · " + fmt(p.H) + " m" + "</option>").join("") + "</optgroup>").join("");
     $("n-tipo").value = POSTES_DLA.porId[ult] ? ult : "DLA1";
     pernasForm();
   }
@@ -1769,7 +1798,7 @@ var POSTES_DLA = (function () {
       const r = renderer.domElement.getBoundingClientRect();
       ptr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera);
       const hits = ray.intersectObjects([].concat(...Object.values(EL).map((e) => e.sels)), false);
-      const pri = hits.find((h) => !/^(f|c)\d/.test(h.object.userData.id)) || hits[0];
+      const pri = hits.find((h) => !/^(f|c|t)\d/.test(h.object.userData.id)) || hits[0];
       if (pri) selecionar(pri.object.userData.id);
     });
   }

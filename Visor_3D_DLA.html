@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 </head>
 <body>
-<title>Postes DLA 3D</title>
+<title>Postes DLA e DLR 3D</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -96,6 +96,13 @@ h2 {
 }
 .escolha-poste { font-family: var(--font-display); font-weight: 600; font-size: .9rem; color: var(--muted); display: flex; gap: 6px; align-items: center; }
 .escolha-poste select { font-family: var(--font-display); font-weight: 700; font-size: 1rem; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--accent); background: var(--bg); color: var(--fg); }
+.comp-lista { display: grid; gap: 6px; }
+.comp-lista .fam { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.comp-lista .fam b { font-family: var(--font-display); font-size: .78rem; color: var(--muted); width: 32px; }
+.comp-lista label { font-family: var(--font-mono); font-size: .78rem; border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }
+.comp-lista label:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.comp-lista input { margin: 0; accent-color: var(--accent); }
+.comp-tab { margin-top: 8px; }
 .pernas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .pernas label { display: grid; gap: 3px; font-size: .78rem; color: var(--muted); }
 .pernas select {
@@ -164,6 +171,7 @@ a.lig { margin-left: auto; font-family: var(--font-display); font-weight: 600; f
       <button class="b" id="v-topo" aria-pressed="false">Topo</button>
       <span class="sep"></span>
       <button class="b" id="comparar" aria-pressed="false">Comparar pernas</button>
+      <button class="b" id="comparar-postes" aria-pressed="false">Comparar postes</button>
       <button class="b" id="maximizar" aria-pressed="false">⤢ Maximizar</button>
     </div>
     <div class="ajuda">Arrastar: rodar · roda/pinça: zoom · botão direito/dois dedos: deslocar · toque num elemento para ver a ficha</div>
@@ -175,7 +183,14 @@ a.lig { margin-left: auto; font-family: var(--font-display); font-weight: 600; f
       <div><b id="r-desn">0,00 m</b><span>Desnível pés</span></div>
     </div>
 
-    <section>
+    <section class="comp-postes" id="sec-comp" hidden>
+      <h2>Postes a comparar</h2>
+      <div class="comp-lista" id="comp-lista"></div>
+      <div class="todas"><button class="b" id="comp-limpar" type="button">Só o atual</button></div>
+      <div class="comp-tab" id="comp-tab"></div>
+    </section>
+
+    <section id="sec-pernas">
       <h2>Pernas (desniveladas)</h2>
       <div class="pernas" id="pernas"></div>
       <div class="todas" id="todas" aria-label="Aplicar a todas as pernas"></div>
@@ -1269,7 +1284,7 @@ a.lig { margin-left: auto; font-family: var(--font-display); font-weight: 600; f
 
 </script>
 <script>
-// Postes tipo DLA (REN, linhas a 400 kV): geometria medida nos PDFs das pastas DLA1..DLA10.
+// Postes tipo DLA e DLR (REN, linhas a 400 kV): geometria medida nos PDFs das pastas DLA/DLA1..10 e DLR.
 // Partilhado pelo visualizador 3D e pela aplicação de inspeção (é metido em linha ao construir).
 //
 // O corpo é tronco-piramidal RETANGULAR: inclinação por lado 0,1146 na vista frontal
@@ -1304,6 +1319,21 @@ var POSTES_DLA = (function () {
     f6: { nome: "Fuste 6", h: 6.670, esc: "1/25", folha: "Fustes/Fuste 6.pdf" },
     f7: { nome: "Fuste 7", h: 5.350, esc: "1/25", folha: "Fustes/Fuste 7.pdf" }
   };
+  // Família DLR (desenhos LD26113, pasta DLR): mesma cabeça, braços e inclinações dos DLA;
+  // alturas dos troços pelas cotas das folhas; uma só perna ("0") por poste.
+  var FUSTES_DLR = {
+    t1: { nome: "Fuste T1", h: 7.077, esc: "1/15", folha: "Fuste-T1/Desenho/LD26113F8.pdf" },
+    t2: { nome: "Fuste T2", h: 7.916, esc: "1/15", folha: "Fuste-T2/Desenho/LD26113F9.pdf" },
+    t3: { nome: "Fuste T3", h: 6.019, esc: "1/15", folha: "Fuste-T3/Desenho/LD26113F10.pdf" },
+    t4: { nome: "Fuste T4", h: 6.019, esc: "1/15", folha: "Fuste-T4/Desenho/LD26113F11.pdf" },
+    t5: { nome: "Fuste T5", h: 6.019, esc: "1/15", folha: "Fuste-T5/Desenho/LD26113F12.pdf" },
+    t5a: { nome: "Fuste T5A", h: 6.019, esc: "1/15", folha: "Fuste-T5A/Desenho/LD26113F26.pdf" },
+    t6: { nome: "Fuste T6", h: 6.019, esc: "1/15", folha: "Fuste-T6/Desenho/LD26113F20.pdf" },
+    t7: { nome: "Fuste T7", h: 6.019, esc: "1/15", folha: "Fuste-T7/Desenho/LD26113F21.pdf" }
+  };
+  var CAB_DLR = { c1: "Cabeça-T1/Desenho/LD26113F1.pdf", c2: "Cabeça-T2/Desenho/LD26113F2.pdf", c3: "Cabeça-T3/Desenho/LD26113F3.pdf", c4: "Cabeça-T4/Desenho/LD26113F4.pdf" };
+  var BR_DLR = { bcg: "Br Cabo Guarda/Desenho/LD26113F5.pdf", bsup: "Br Sup Médio/Desenho/LD26113F6.pdf", bmed: "Br Sup Médio/Desenho/LD26113F6.pdf", binf: "Br Inferior/Desenho/LD26113F7.pdf" };
+  var PERNA_DLR = { 1: 13, 2: 14, 3: 15, 4: 16, 5: 17, 6: 18, 7: 22, 8: 23, 9: 24, 10: 25 };
   // Composição (fustes de baixo para cima) e alturas das pernas [variante, altura em m]
   var DEF = [
     { id: "DLA1", fustes: ["f3", "f2", "f1"], pernas: [["-1", 2.007], ["0", 3.015], ["1", 4.013], ["2", 5.016], ["3", 6.019]] },
@@ -1315,36 +1345,50 @@ var POSTES_DLA = (function () {
     { id: "DLA7", fustes: ["f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-1", 2.348], ["0", 3.351], ["1", 4.354], ["2", 5.357], ["3", 6.360]] },
     { id: "DLA8", fustes: ["f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-2", 4.354], ["-1", 5.357], ["0", 6.361], ["1", 7.364], ["2", 8.367], ["3", 9.370]] },
     { id: "DLA9", fustes: ["f7", "f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-2", 2.006], ["-1", 3.010], ["0", 4.013], ["1", 5.016], ["2", 6.019], ["3", 7.022]] },
-    { id: "DLA10", fustes: ["f7", "f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-2", 5.016], ["-1", 6.040], ["0", 7.022], ["1", 8.026], ["2", 9.029], ["3", 10.032]] }
+    { id: "DLA10", fustes: ["f7", "f6", "f5a", "f4", "f3", "f2", "f1"], pernas: [["-2", 5.016], ["-1", 6.040], ["0", 7.022], ["1", 8.026], ["2", 9.029], ["3", 10.032]] },
+    // DLR: alturas das pernas pelas cotas das folhas; DLR2 e DLR7 confirmadas pela tabela de bases (LD26113F19)
+    { id: "DLR1", fustes: ["t3", "t2", "t1"], pernas: [["0", 3.010]] },
+    { id: "DLR2", fustes: ["t3", "t2", "t1"], pernas: [["0", 6.019]] },
+    { id: "DLR3", fustes: ["t4", "t3", "t2", "t1"], pernas: [["0", 3.010]] },
+    { id: "DLR4", fustes: ["t4", "t3", "t2", "t1"], pernas: [["0", 6.019]] },
+    { id: "DLR5", fustes: ["t5", "t4", "t3", "t2", "t1"], pernas: [["0", 4.013]] },
+    { id: "DLR6", fustes: ["t5", "t4", "t3", "t2", "t1"], pernas: [["0", 7.022]] },
+    { id: "DLR7", fustes: ["t6", "t5a", "t4", "t3", "t2", "t1"], pernas: [["0", 4.013]] },
+    { id: "DLR8", fustes: ["t6", "t5a", "t4", "t3", "t2", "t1"], pernas: [["0", 7.022]] },
+    { id: "DLR9", fustes: ["t7", "t6", "t5a", "t4", "t3", "t2", "t1"], pernas: [["0", 4.013]] },
+    { id: "DLR10", fustes: ["t7", "t6", "t5a", "t4", "t3", "t2", "t1"], pernas: [["0", 7.022]] }
   ];
   var r3 = function (v) { return Math.round(v * 1000) / 1000; };
   var nomeVar = function (k) { return (k[0] === "-" ? "−" + k.slice(1) : "+" + k) + "m"; };
 
   function construir(d) {
+    var dlr = d.id.slice(0, 3) === "DLR", n = d.id.slice(3);
+    var TAB = dlr ? FUSTES_DLR : FUSTES;
     var ZT = d.pernas.filter(function (p) { return p[0] === "0"; })[0][1];
-    var corpo = d.fustes.reduce(function (s, f) { return s + FUSTES[f].h; }, 0);
+    var corpo = d.fustes.reduce(function (s, f) { return s + TAB[f].h; }, 0);
     var zc = ZT + corpo;                    // base da Cabeça 4
     var wx = function (z) { return r3(WC + 2 * SX * Math.max(0, zc - z)); };
     var wy = function (z) { return r3(WC + 2 * SY * Math.max(0, zc - z)); };
     var trocos = [], z = ZT;
     d.fustes.forEach(function (f) {
-      var F = FUSTES[f], z1 = r3(z + F.h);
+      var F = TAB[f], z1 = r3(z + F.h);
       trocos.push({ id: f, nome: F.nome, tipo: "fuste", z0: r3(z), z1: z1, wx0: wx(z), wx1: wx(z1), wy0: wy(z), wy1: wy(z1), esc: F.esc, folha: F.folha });
       z = z1;
     });
     CABECAS.forEach(function (c) {
-      trocos.push({ id: c.id, nome: c.nome, tipo: "cabeca", z0: r3(zc + c.a), z1: r3(zc + c.b), wx0: WC, wx1: WC, wy0: WC, wy1: WC, esc: c.esc, folha: "Cabeças/" + c.nome + ".pdf" });
+      trocos.push({ id: c.id, nome: c.nome, tipo: "cabeca", z0: r3(zc + c.a), z1: r3(zc + c.b), wx0: WC, wx1: WC, wy0: WC, wy1: WC, esc: c.esc, folha: dlr ? CAB_DLR[c.id] : "Cabeças/" + c.nome + ".pdf" });
     });
     var WTx = wx(ZT), WTy = wy(ZT);
     var variantes = d.pernas.map(function (p) {
-      return { id: p[0], nome: nomeVar(p[0]), h: p[1], wx: r3(WTx + 2 * SX * p[1]), wy: r3(WTy + 2 * SY * p[1]), esc: "—",
-        folha: "Pernas Desniveladas/" + d.id + " " + (p[0][0] === "-" ? p[0] : "+" + p[0]) + "m.pdf" };
+      return { id: p[0], nome: nomeVar(p[0]), h: p[1], wx: r3(WTx + 2 * SX * p[1]), wy: r3(WTy + 2 * SY * p[1]), esc: dlr ? "1/15" : "—",
+        folha: dlr ? "Pernas " + d.id + "/Desenho/LD26113F" + PERNA_DLR[n] + ".pdf"
+                   : "Pernas Desniveladas/" + d.id + " " + (p[0][0] === "-" ? p[0] : "+" + p[0]) + "m.pdf" };
     });
     var bracos = BRACOS.map(function (b) {
       var o = {}; for (var k in b) o[k] = b[k];
-      o.z = r3(zc + b.dz); o.w0 = WC; o.w1 = 0.13; return o;
+      o.z = r3(zc + b.dz); o.w0 = WC; o.w1 = 0.13; if (dlr) o.folha = BR_DLR[b.id]; return o;
     });
-    return { id: d.id, nome: "Poste " + d.id, ZT: ZT, WTx: WTx, WTy: WTy, H: r3(zc + 22.668), zc: r3(zc), FACE: WC / 2,
+    return { id: d.id, familia: dlr ? "DLR" : "DLA", pasta: dlr ? "DLR" : "DLA/" + d.id, nome: "Poste " + d.id, ZT: ZT, WTx: WTx, WTy: WTy, H: r3(zc + 22.668), zc: r3(zc), FACE: WC / 2,
       fustes: d.fustes.slice(), VARIANTES: variantes, TROCOS: trocos, BRACOS: bracos };
   }
   var lista = DEF.map(construir), mapa = {};
@@ -1368,15 +1412,19 @@ var POSTES_DLA = (function () {
   try { guardado = JSON.parse(localStorage.getItem("dla-3d")) || {}; } catch (e) {}
   let escolha = { pA: "0", pB: "0", pC: "0", pD: "0" };
 
-  function usarPoste(id) {
-    P = POSTES_DLA.porId[id] || POSTES_DLA.lista[0];
-    ({ ZT, WTx, WTy, VARIANTES, TROCOS, H, FACE, BRACOS } = P);
+  // põe nas variáveis globais os dados de um poste (o construtor 3D usa-as)
+  function definir(Px) {
+    ({ ZT, WTx, WTy, VARIANTES, TROCOS, H, FACE, BRACOS } = Px);
     VAR = Object.fromEntries(VARIANTES.map((v) => [v.id, v]));
     TRAVESSAS = [];
     BRACOS.forEach((b) => {
       const zi = b.topo ? b.z - b.d0 : b.z, zs = b.topo ? b.z : b.z + b.d0;
       TRAVESSAS.push(zi, zs);
     });
+  }
+  function usarPoste(id) {
+    P = POSTES_DLA.porId[id] || POSTES_DLA.lista[0];
+    definir(P);
     const g = (guardado.pernas || {})[P.id];
     escolha = { pA: "0", pB: "0", pC: "0", pD: "0" };
     if (g) PERNAS.forEach((p) => { if (VAR[g[p.id]]) escolha[p.id] = g[p.id]; });
@@ -1551,8 +1599,8 @@ var POSTES_DLA = (function () {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
     const k = escala || 1; s.scale.set(4 * k, 0.8 * k, 1); return s;
   }
-  function terreno(raiz, esc) {
-    const g = new THREE.GridHelper(50, 25, C.muted, C.line); g.material.transparent = true; g.material.opacity = 0.55; raiz.add(g);
+  function terreno(raiz, esc, semGrelha) {
+    if (!semGrelha) { const g = new THREE.GridHelper(50, 25, C.muted, C.line); g.material.transparent = true; g.material.opacity = 0.55; raiz.add(g); }
     PERNAS.forEach((p) => {
       const v = VAR[esc[p.id]], z = ZT - v.h;
       const m = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.06, 3.2),
@@ -1574,7 +1622,68 @@ var POSTES_DLA = (function () {
   // ---------------------------------------------------------------- estado
   const raiz = new THREE.Group(); scene.add(raiz);
   const raizComp = new THREE.Group(); scene.add(raizComp); raizComp.visible = false;
-  let elementos = {}, gCotas, gChao, selId = null, modoComp = false;
+  let elementos = {}, gCotas, gChao, selId = null, modoComp = false, modoPostes = false;
+
+  // ---------------------------------------------------------------- comparar postes lado a lado
+  const raizPostes = new THREE.Group(); scene.add(raizPostes); raizPostes.visible = false;
+  const PASSO_POSTES = 22;   // afastamento entre eixos (os braços ocupam ~16 m)
+  let compSel = Array.isArray(guardado.comparar) ? guardado.comparar.filter((id) => POSTES_DLA.porId[id]) : [];
+  let comp = { H: 0, L: 0 };
+  function listaComp() {
+    const ordem = POSTES_DLA.lista.map((p) => p.id);
+    return (compSel.length ? compSel : [P.id]).slice().sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
+  }
+  function construirPostes() {
+    raizPostes.clear();
+    const ids = listaComp(), n = ids.length;
+    let Hmax = 0;
+    ids.forEach((id, i) => {
+      const Px = POSTES_DLA.porId[id]; definir(Px);
+      const g = new THREE.Group(); g.position.set((i - (n - 1) / 2) * PASSO_POSTES, 0, 0); raizPostes.add(g);
+      const esc = { pA: "0", pB: "0", pC: "0", pD: "0" };
+      const els = construirPoste(g, esc, null);
+      Object.values(els).forEach((e) => { if (e.sel) e.sel.visible = false; });
+      terreno(g, esc, true);
+      const s = etiqueta(id + "  " + fmt(H) + " m", C.fg, 1.4); s.position.set(1.2, H + 3.5, 0); g.add(s);
+      Hmax = Math.max(Hmax, H);
+    });
+    definir(P);
+    const L = n * PASSO_POSTES + 20;
+    const grelha = new THREE.GridHelper(L, Math.round(L / 2), C.muted, C.line); grelha.material.transparent = true; grelha.material.opacity = 0.55; raizPostes.add(grelha);
+    comp = { H: Hmax, L };
+    aplicarOpcoes();
+    // tabela resumo
+    document.getElementById("comp-tab").innerHTML = '<table class="tabela"><thead><tr><th>Poste</th><th>Altura</th><th>Base x × y</th><th>Corpo</th></tr></thead><tbody>' +
+      ids.map((id) => { const Px = POSTES_DLA.porId[id], v = Px.VARIANTES.find((q) => q.id === "0");
+        return "<tr><td>" + id + "</td><td>" + fmt(Px.H) + "</td><td>" + fmt(v.wx) + " × " + fmt(v.wy) + "</td><td>" + Px.TROCOS.filter((t) => t.tipo === "fuste").length + " fustes</td></tr>"; }).join("") +
+      "</tbody></table>";
+  }
+  function preencherComp() {
+    const el = document.getElementById("comp-lista"), sel = new Set(listaComp());
+    el.innerHTML = ["DLA", "DLR"].map((fam) => '<div class="fam"><b>' + fam + "</b>" + POSTES_DLA.lista.filter((p) => p.familia === fam).map((p) =>
+      '<label><input type="checkbox" value="' + p.id + '"' + (sel.has(p.id) ? " checked" : "") + ">" + p.id.slice(3) + "</label>").join("") + "</div>").join("");
+    el.querySelectorAll("input").forEach((c) => c.addEventListener("change", () => {
+      compSel = Array.from(el.querySelectorAll("input:checked")).map((x) => x.value);
+      guardado.comparar = compSel; guardar();
+      construirPostes(); irPara(vistaAtual);
+    }));
+  }
+  function modoPostesOn(on) {
+    modoPostes = on;
+    document.getElementById("comparar-postes").setAttribute("aria-pressed", String(on));
+    document.getElementById("sec-comp").hidden = !on;
+    ["sec-pernas"].forEach((id) => (document.getElementById(id).hidden = on));
+    if (on) {
+      if (modoComp) { modoComp = false; document.getElementById("comparar").setAttribute("aria-pressed", "false"); }
+      if (!compSel.length) {   // por omissão: o poste atual e o mesmo número da outra família (ou o seguinte)
+        const outro = (P.familia === "DLA" ? "DLR" : "DLA") + P.id.slice(3);
+        compSel = [P.id, POSTES_DLA.porId[outro] ? outro : P.id];
+      }
+      preencherComp(); construirPostes();
+    }
+    raiz.visible = !modoComp && !modoPostes; raizComp.visible = modoComp; raizPostes.visible = modoPostes;
+    irPara(modoPostes ? "frente" : "iso");
+  }
 
   function reconstruir() {
     raiz.clear(); elementos = {};
@@ -1608,7 +1717,7 @@ var POSTES_DLA = (function () {
   }
   function aplicarOpcoes() {
     const trav = document.getElementById("op-trav").checked;
-    [raiz, raizComp].forEach((r) => r.traverse((o) => { if (o.userData && o.userData.travamento) o.visible = trav; }));
+    [raiz, raizComp, raizPostes].forEach((r) => r.traverse((o) => { if (o.userData && o.userData.travamento) o.visible = trav; }));
     if (gCotas) gCotas.visible = document.getElementById("op-cotas").checked;
     if (gChao) gChao.visible = document.getElementById("op-chao").checked;
   }
@@ -1662,7 +1771,7 @@ var POSTES_DLA = (function () {
     }
     const src = d.tipo === "perna" ? d.v : d;
     f.innerHTML = '<div class="t">' + d.nome + "</div><dl>" + linhasF +
-      "<dt>Escala</dt><dd>" + src.esc + "</dd><dt>Folha</dt><dd>" + P.id + "/" + src.folha + "</dd></dl>";
+      "<dt>Escala</dt><dd>" + src.esc + "</dd><dt>Folha</dt><dd>" + P.pasta + "/" + src.folha + "</dd></dl>";
   }
   function selecionar(id) {
     selId = selId === id ? null : id;
@@ -1727,7 +1836,7 @@ var POSTES_DLA = (function () {
   let baixo = null;
   renderer.domElement.addEventListener("pointerdown", (ev) => { baixo = [ev.clientX, ev.clientY]; });
   renderer.domElement.addEventListener("pointerup", (ev) => {
-    if (modoComp || !baixo || Math.hypot(ev.clientX - baixo[0], ev.clientY - baixo[1]) > 6) return;
+    if (modoComp || modoPostes || !baixo || Math.hypot(ev.clientX - baixo[0], ev.clientY - baixo[1]) > 6) return;
     const r = renderer.domElement.getBoundingClientRect();
     ptr.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ptr, camera);
@@ -1739,6 +1848,12 @@ var POSTES_DLA = (function () {
 
   // ---------------------------------------------------------------- vistas
   const k = () => H / 46.663;
+  const vistasPostes = {
+    iso:    () => [V(comp.L * 0.55 + 30, comp.H * 0.75, comp.L * 0.75 + 55), V(0, comp.H * 0.45, 0)],
+    frente: () => [V(0, comp.H * 0.5, Math.max(comp.H * 2.1, comp.L * 1.45)), V(0, comp.H * 0.5, 0)],
+    lado:   () => [V(Math.max(comp.H * 2.1, comp.L * 0.9) + comp.L / 2, comp.H * 0.5, 0.01), V(0, comp.H * 0.5, 0)],
+    topo:   () => [V(0.01, comp.H + Math.max(70, comp.L * 1.3), 0.01), V(0, comp.H * 0.5, 0)]
+  };
   const vistas = {
     iso:    () => modoComp ? [V(110 * k(), 60 * k(), 110 * k()), V(0, H * 0.45, 0)] : [V(56 * k(), 44 * k(), 74 * k()), V(0, H * 0.5, 0)],
     frente: () => modoComp ? [V(170 * k(), H * 0.5, 0.01), V(0, H * 0.5, 0)] : [V(0, H * 0.5, 95 * k()), V(0, H * 0.5, 0)],
@@ -1748,7 +1863,7 @@ var POSTES_DLA = (function () {
   let vistaAtual = "iso";
   function irPara(nome) {
     vistaAtual = nome;
-    const [p, t] = vistas[nome]();
+    const [p, t] = (modoPostes ? vistasPostes : vistas)[nome]();
     camera.position.copy(p); controls.target.copy(t); controls.update();
     ["iso", "frente", "lado", "topo"].forEach((n) => document.getElementById("v-" + n).setAttribute("aria-pressed", String(n === nome)));
   }
@@ -1756,18 +1871,20 @@ var POSTES_DLA = (function () {
   document.getElementById("comparar").addEventListener("click", (ev) => {
     modoComp = !modoComp;
     ev.currentTarget.setAttribute("aria-pressed", String(modoComp));
+    if (modoComp && modoPostes) { modoPostes = false; document.getElementById("comparar-postes").setAttribute("aria-pressed", "false"); document.getElementById("sec-comp").hidden = true; document.getElementById("sec-pernas").hidden = false; }
     if (modoComp && !raizComp.children.length) construirComparacao();
-    raiz.visible = !modoComp; raizComp.visible = modoComp;
+    raiz.visible = !modoComp; raizComp.visible = modoComp; raizPostes.visible = false;
     irPara(modoComp ? "frente" : "iso");
   });
 
   const selPoste = document.getElementById("sel-poste");
-  selPoste.innerHTML = POSTES_DLA.lista.map((p) => '<option value="' + p.id + '">' + p.id + "</option>").join("");
+  selPoste.innerHTML = ["DLA", "DLR"].map((fam) => '<optgroup label="' + fam + '">' + POSTES_DLA.lista.filter((p) => p.familia === fam).map((p) => '<option value="' + p.id + '">' + p.id + "</option>").join("") + "</optgroup>").join("");
   selPoste.value = P.id;
   selPoste.addEventListener("change", () => {
     usarPoste(selPoste.value); selId = null;
     preencherPainel(); reconstruir(); raizComp.clear();
     if (modoComp) construirComparacao();
+    if (modoPostes) { preencherComp(); construirPostes(); }
     irPara(vistaAtual);
   });
 
@@ -1782,7 +1899,9 @@ var POSTES_DLA = (function () {
   ["op-trav", "op-cotas", "op-chao"].forEach((id) => document.getElementById(id).addEventListener("change", aplicarOpcoes));
 
   // ---------------------------------------------------------------- tema
-  function mudouTema() { lerCores(); reconstruir(); if (raizComp.children.length) construirComparacao(); }
+  function mudouTema() { lerCores(); reconstruir(); if (raizComp.children.length) construirComparacao(); if (modoPostes) construirPostes(); }
+  document.getElementById("comparar-postes").addEventListener("click", () => modoPostesOn(!modoPostes));
+  document.getElementById("comp-limpar").addEventListener("click", () => { compSel = [P.id]; guardado.comparar = compSel; guardar(); preencherComp(); construirPostes(); irPara(vistaAtual); });
   try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", mudouTema); } catch (e) {}
   new MutationObserver(mudouTema).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
