@@ -92,10 +92,27 @@ textarea { min-height: 70px; resize: vertical; }
 .guardado { font-size: .78rem; color: var(--muted); }
 .mismatch { color: var(--bad); font-weight: 600; font-size: .85rem; }
 .confirmar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: .85rem; }
+/* secções recolhíveis (Pernas, Corpo, Braços, Conclusão) */
+details.sec { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+details.sec > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 11px 12px; }
+details.sec > summary::-webkit-details-marker { display: none; }
+details.sec > summary::before { content: "▸"; color: var(--muted); font-size: .9rem; transition: transform .15s; }
+details.sec[open] > summary::before { transform: rotate(90deg); }
+details.sec .st { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+details.sec .cont { margin-left: auto; font-family: var(--font-mono); font-size: .78rem; color: var(--muted); }
+details.sec .cont .bad { color: var(--bad); }
+details.sec .grupo { padding: 0 6px 8px; }
+details.sec > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.maxbtn { position: absolute; top: 10px; right: max(10px, env(safe-area-inset-right, 0px)); z-index: 2; font-size: .85rem; padding: 7px 10px; }
+@media (prefers-reduced-motion: reduce) { details.sec > summary::before { transition: none; } }
 @media (max-width: 820px) {
-  .insp-grid { grid-template-columns: 1fr; grid-template-rows: 40% 60%; }
-  .painel { border-left: 0; border-top: 1px solid var(--line); padding-left: max(16px, env(safe-area-inset-left, 0px)); }
+  .insp-grid { grid-template-columns: 1fr; grid-template-rows: 60% 40%; }
+  .painel { border-left: 0; border-top: 1px solid var(--line); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-top: 10px; gap: 10px; }
+  /* poste maximizado: fica só o progresso e a ficha do elemento tocado */
+  .insp-grid.max { grid-template-rows: 82% 18%; }
+  .insp-grid.max details.sec { display: none; }
 }
+@media (min-width: 821px) { .maxbtn { display: none; } }
 </style>
 </head>
 <body>
@@ -146,16 +163,17 @@ textarea { min-height: 70px; resize: vertical; }
 
 <div class="insp-grid" id="v-insp" hidden>
   <div id="cena">
+    <button class="b maxbtn" id="maximizar" type="button" aria-pressed="false">⤢ Maximizar poste</button>
     <div class="legenda"><span><i style="background:var(--ok)"></i>OK</span><span><i style="background:var(--bad)"></i>Anomalia</span><span><i style="background:var(--steel)"></i>Por verificar</span><span>· toque num elemento</span></div>
   </div>
   <div class="painel">
     <div class="progresso" id="progresso"></div>
     <div id="card"></div>
-    <section><h2>Pernas</h2><div class="grupo" id="g-pernas"></div></section>
-    <section><h2>Corpo</h2><div class="grupo" id="g-corpo"></div></section>
-    <section><h2>Braços</h2><div class="grupo" id="g-bracos"></div></section>
-    <section class="cartao">
-      <h2>Conclusão</h2>
+    <details class="sec" id="d-pernas"><summary><span class="st">Pernas</span><span class="cont" id="s-pernas"></span></summary><div class="grupo" id="g-pernas"></div></details>
+    <details class="sec" id="d-corpo"><summary><span class="st">Corpo</span><span class="cont" id="s-corpo"></span></summary><div class="grupo" id="g-corpo"></div></details>
+    <details class="sec" id="d-bracos"><summary><span class="st">Braços</span><span class="cont" id="s-bracos"></span></summary><div class="grupo" id="g-bracos"></div></details>
+    <details class="sec" id="d-concl"><summary><span class="st">Conclusão e ficheiro</span><span class="cont" id="s-concl"></span></summary>
+    <section class="cartao" style="margin-top:8px">
       <textarea id="conclusao" placeholder="Observações gerais da inspeção"></textarea>
       <div class="acoes" style="margin-top:10px">
         <button class="b pri" id="concluir" type="button">Concluir inspeção</button>
@@ -166,6 +184,7 @@ textarea { min-height: 70px; resize: vertical; }
       <p class="guardado" id="rel-estado"></p>
       <div class="acoes" style="margin-top:6px"><button class="b perigo" id="apagar" type="button">Apagar esta inspeção</button></div>
     </section>
+    </details>
   </div>
 </div>
 
@@ -1375,6 +1394,12 @@ textarea { min-height: 70px; resize: vertical; }
       $(i.grupo).appendChild(div);
     });
     $("concluir").textContent = S.insp.dados.estado === "concluida" ? "Reabrir inspeção" : "Concluir inspeção";
+    // progresso no cabeçalho de cada secção recolhível
+    [["g-pernas", "s-pernas"], ["g-corpo", "s-corpo"], ["g-bracos", "s-bracos"]].forEach(([g, s]) => {
+      const its = ITENS.filter((i) => i.grupo === g), ver = its.filter((i) => estadoDe(i.id) !== "nv").length, bad = its.filter((i) => estadoDe(i.id) === "anomalia").length;
+      $(s).innerHTML = ver + "/" + its.length + (bad ? ' · <span class="bad">' + bad + " anomalia" + (bad > 1 ? "s" : "") + "</span>" : "");
+    });
+    $("s-concl").textContent = S.insp.dados.estado === "concluida" ? "concluída" : "em curso";
   }
   function selecionar(id) {
     S.sel = S.sel === id ? null : id;
@@ -1663,6 +1688,26 @@ textarea { min-height: 70px; resize: vertical; }
   // ================================================================ arranque
   function voltar() { S.atual = null; S.insp = null; S.sel = null; $("barra-sub").textContent = "400 kV · funciona sem rede"; mostrar("lista"); desenharLista(); }
   $("voltar").addEventListener("click", voltar);
+  // Secções recolhíveis: fechadas no telemóvel, abertas em ecrã largo; lembra a escolha
+  const telemovel = window.matchMedia("(max-width: 820px)").matches;
+  let abertas = null;
+  try { abertas = JSON.parse(localStorage.getItem("secoes-abertas")); } catch (e) {}
+  ["d-pernas", "d-corpo", "d-bracos", "d-concl"].forEach((id) => {
+    const d = $(id);
+    d.open = abertas && id in abertas ? !!abertas[id] : !telemovel;
+    d.addEventListener("toggle", () => {
+      const m = {}; ["d-pernas", "d-corpo", "d-bracos", "d-concl"].forEach((k) => (m[k] = $(k).open));
+      try { localStorage.setItem("secoes-abertas", JSON.stringify(m)); } catch (e) {}
+    });
+  });
+  // Maximizar o poste (telemóvel)
+  $("maximizar").addEventListener("click", () => {
+    const on = !$("v-insp").classList.contains("max");
+    $("v-insp").classList.toggle("max", on);
+    $("maximizar").setAttribute("aria-pressed", String(on));
+    $("maximizar").textContent = on ? "⤡ Mostrar listas" : "⤢ Maximizar poste";
+    requestAnimationFrame(redimensionar);
+  });
   $("criar").addEventListener("click", criar);
   prepararForm(); mostrar("lista");
   LOCAL.abrir().catch(() => LOCAL.falhou()).finally(desenharLista);
