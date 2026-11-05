@@ -1,7 +1,7 @@
 {
-  "name": "Inspeção DLA1",
-  "short_name": "Inspeção DLA1",
-  "start_url": "Inspecao_DLA1.html",
+  "name": "Inspeção DLA",
+  "short_name": "Inspeção DLA",
+  "start_url": "Inspecao_DLA.html",
   "display": "standalone",
   "background_color": "#eef1f0",
   "theme_color": "#d9711c",
